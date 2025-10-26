@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MusMux (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "MusMux (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

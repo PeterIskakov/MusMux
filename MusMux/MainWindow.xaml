@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="MusMux.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MusMux"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="MusMux">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+
+    <Grid x:Name="LayoutRoot">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="96"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid Background="{ThemeResource LayerFillColorDefaultBrush}" Grid.Row="1" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel  Grid.Column="1">
+                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                    <AppBarButton Icon="Previous" LabelPosition="Collapsed" Label="Play"/>
+                    <AppBarButton Icon="Play" LabelPosition="Collapsed" Label="Play"/>
+                    <AppBarButton Icon="Next" LabelPosition="Collapsed" Label="Play"/>
+
+                </StackPanel>
+                <Slider HorizontalAlignment="Center" AutomationProperties.Name="simple slider" Width="360"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
