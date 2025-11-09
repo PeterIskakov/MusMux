@@ -8,11 +8,10 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Title="MusMux">
-
+    
     <Window.SystemBackdrop>
         <MicaBackdrop />
     </Window.SystemBackdrop>
-
 
     <Grid x:Name="LayoutRoot">
         <Grid.RowDefinitions>
@@ -22,7 +21,27 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <Grid Background="{ThemeResource LayerFillColorDefaultBrush}" Grid.Row="1" Grid.Column="0">
+
+        <ListView
+            x:Name="BaseExample"
+            Grid.Row="0"
+            Grid.Column="0">
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="local:SongItem">
+                    <StackPanel Spacing="12" Orientation="Horizontal" Margin="0,5,0,5">
+                        <Button>
+                            <FontIcon Glyph="&#xE102;"/> 
+                        </Button>
+                        <StackPanel>
+                            <TextBlock Text="{x:Bind Properties.Title}" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <TextBlock Text="{x:Bind Properties.FirstPerformer}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <Grid x:Name="BottomBar" Background="{ThemeResource LayerFillColorDefaultBrush}" Grid.Row="1" Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
@@ -33,9 +52,9 @@
             </Grid.ColumnDefinitions>
             <StackPanel  Grid.Column="1">
                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                    <AppBarButton Icon="Previous" LabelPosition="Collapsed" Label="Play"/>
-                    <AppBarButton Icon="Play" LabelPosition="Collapsed" Label="Play"/>
-                    <AppBarButton Icon="Next" LabelPosition="Collapsed" Label="Play"/>
+                    <AppBarButton Icon="Previous" LabelPosition="Collapsed" Label="Previous" Click="MainPrev_Click"/>
+                    <AppBarButton x:Name="MainPlay" Icon="Play" LabelPosition="Collapsed" Label="Play" Click="MainPlay_Click"/>
+                    <AppBarButton Icon="Next" LabelPosition="Collapsed" Label="Next" Click="MainNext_Click"/>
 
                 </StackPanel>
                 <Slider HorizontalAlignment="Center" AutomationProperties.Name="simple slider" Width="360"/>
