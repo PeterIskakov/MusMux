@@ -15,6 +15,7 @@ namespace MusMux
             Path = path;
             TagLib.File file = TagLib.File.Create(path);
             Properties = file.Tag;
+            file.Dispose();
         }
     }
 }

@@ -15,21 +15,25 @@
 
     <Grid x:Name="LayoutRoot">
         <Grid.RowDefinitions>
+            <RowDefinition Height="48"/>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="96"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-
+        <CommandBar x:Name="CmdBar" HorizontalAlignment="Left" DefaultLabelPosition="Right" Grid.Row="0" Grid.Column="0">
+            <AppBarButton Icon="Add" Label="Add Song" Click="AddFile_Click"/>
+            <AppBarButton Icon="Folder" Label="Add Folder" Click="AddFolder_Click"/>
+        </CommandBar>
         <ListView
             x:Name="BaseExample"
-            Grid.Row="0"
+            Grid.Row="1"
             Grid.Column="0">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:SongItem">
                     <StackPanel Spacing="12" Orientation="Horizontal" Margin="0,5,0,5">
-                        <Button>
+                        <Button x:Name="SongPlay" Click="SongPlay_Click">
                             <FontIcon Glyph="&#xE102;"/> 
                         </Button>
                         <StackPanel>
@@ -41,7 +45,7 @@
             </ListView.ItemTemplate>
         </ListView>
 
-        <Grid x:Name="BottomBar" Background="{ThemeResource LayerFillColorDefaultBrush}" Grid.Row="1" Grid.Column="0">
+        <Grid x:Name="BottomBar" Background="{ThemeResource LayerFillColorDefaultBrush}" Grid.Row="2" Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
