@@ -1,37 +1,49 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Collections.ObjectModel;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using Windows.Graphics;
 
 namespace MusMux
 {
-    /// <summary>
-    /// An empty window that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class SelectionPopup : Window
     {
+        private const int WindowWidth = 500;
+        private const int WindowHeight = 390;
+        private const int EdgeOffset = 12;
+
+        private ObservableCollection<SongItem> SongList;
+        private List<SongItem> OriginalSongList;
         private TaskCompletionSource<int> _tcs = new();
 
-        public SelectionPopup()
+        public SelectionPopup(List<SongItem> songs)
         {
             InitializeComponent();
 
-            OverlappedPresenter presenter = OverlappedPresenter.Create();
+            Random rnd = new();
+
+            OriginalSongList = songs;
+            SongList = new(songs.OrderBy(x => rnd.Next()).Take(6));
+            SongListView.ItemsSource = SongList;
+
+            AppWindow.Resize(new SizeInt32(WindowWidth, WindowHeight));
+
+            RectInt32? area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest)?.WorkArea;
+            if (area != null)
+            {
+                AppWindow.Move(new PointInt32(
+                    area.Value.Width - WindowWidth - EdgeOffset, 
+                    area.Value.Height - WindowHeight - EdgeOffset));
+            } else
+            {
+                AppWindow.Move(new PointInt32(0, 0));
+            }
+
+                OverlappedPresenter presenter = OverlappedPresenter.Create();
 
             presenter.IsAlwaysOnTop = true;
             presenter.IsMaximizable = false;
@@ -43,19 +55,19 @@ namespace MusMux
         }
 
         // Call this to show the popup and await the result.
-        public async Task<int> ShowAsync()
+        public async Task<int> SelectSong()
         {
             AppWindow.Show();
             return await _tcs.Task;
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void SongListView_ItemClick(object sender, ItemClickEventArgs e)
         {
-            if (sender is Button btn && int.TryParse(btn.Content.ToString(), out int value))
-            {
-                _tcs.TrySetResult(value);
-                Close();
-            }
+            SongItem s = (SongItem)e.ClickedItem;
+            int i = OriginalSongList.IndexOf(s);
+
+            _tcs.TrySetResult(i);
+            Close();
         }
     }
 }

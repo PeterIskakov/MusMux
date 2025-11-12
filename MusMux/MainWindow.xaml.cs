@@ -2,51 +2,48 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using System.Timers;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Storage;
-using Windows.Storage.AccessCache;
 using Windows.Storage.Pickers;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace MusMux
 {
-    /// <summary>
-    /// An empty window that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class MainWindow : Window
     {
+        private readonly string[] SupportedExtensions = [".mp3", ".flac"];
+
         private ObservableCollection<SongItem> Songs;
-        private int SongIndex;
         private MediaPlayer SongPlayer;
+        private Timer SliderTimer;
+
+        private int SongIndex;
+        private bool Seeking;
 
         public MainWindow()
         {
+            Seeking = false;
             SongIndex = -1;
             InitializeComponent();
             Songs = new();
             SongPlayer = new();
             SongPlayer.MediaEnded += SongPlayer_MediaEnded;
-            BaseExample.ItemsSource = Songs;
-
+            SliderTimer = new(500);
+            SliderTimer.Elapsed += SliderTimer_Elapsed;
+            SliderTimer.Start();
+            SongListView.ItemsSource = Songs;
+            
             ExtendsContentIntoTitleBar = true;
             AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
         }
+
+        // Helper functions
 
         private void PauseSong()
         {
@@ -62,14 +59,55 @@ namespace MusMux
             SongPlayer.Play();
         }
 
+        private void SongPlayIndicator(bool playing)
+        {
+            ListViewItem container = (ListViewItem)SongListView.ContainerFromIndex(SongIndex);
+            if (container != null)
+            {
+                FrameworkElement fe = (FrameworkElement)container.ContentTemplateRoot;
+                Button btn = (Button)fe.FindName("SongPlay");
+                FontIcon ico = new();
+
+                ico.Glyph = "\uE768";
+                if (playing)
+                {
+                    ico.Glyph = "\uE769";
+                } 
+                btn.Content = ico;
+            }
+        }
+
+        // Event handler functions
+
+        private void SliderTimer_Elapsed(object? sender, ElapsedEventArgs e)
+        {
+            if (SongPlayer.CurrentState != MediaPlayerState.Playing) return;
+            if (Seeking) return;
+
+            MediaPlaybackSession session = SongPlayer.PlaybackSession;
+            double position = session.Position.TotalSeconds;
+            double duration = session.NaturalDuration.TotalSeconds;
+
+            if (duration <= 0) return;
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                SongSlider.Maximum = duration;
+                SongSlider.Value = position;
+            });
+        }
+
         private void SongPlayer_MediaEnded(MediaPlayer sender, object args)
         {
             DispatcherQueue.TryEnqueue(async () =>
             {
                 PauseSong();
-                int selection = await new SelectionPopup().ShowAsync();
+                SongPlayIndicator(false);
+                int selection = await new SelectionPopup(Songs.ToList()).SelectSong();
                 SongIndex = selection;
                 SongPlayer.Source = MediaSource.CreateFromUri(new Uri(Songs[SongIndex].Path));
+
+                SongPlayIndicator(true);
                 PlaySong();
             });            
         }
@@ -79,42 +117,73 @@ namespace MusMux
             if (SongIndex == -1) return;
             if (SongPlayer.CurrentState == MediaPlayerState.Playing)
             {
+                SongPlayIndicator(false);
                 PauseSong();
                 return;
             }
+            SongPlayIndicator(true);
             PlaySong();
         }
 
         private void MainPrev_Click(object sender, RoutedEventArgs e)
         {
             if (SongIndex == -1) return;
+            SongPlayIndicator(false);
             if (SongIndex - 1 >= 0) SongIndex--;
             SongPlayer.Source = MediaSource.CreateFromUri(new Uri(Songs[SongIndex].Path));
+
+            SongPlayIndicator(true);
             PlaySong();
         }
 
         private void MainNext_Click(object sender, RoutedEventArgs e)
         {
             if (SongIndex == -1) return;
+            SongPlayIndicator(false);
             if (SongIndex + 1 < Songs.Count) SongIndex++;
             SongPlayer.Source = MediaSource.CreateFromUri(new Uri(Songs[SongIndex].Path));
+
+            SongPlayIndicator(true);
             PlaySong();
         }
 
         private void SongPlay_Click(object sender, RoutedEventArgs e)
         {
             Button s = (Button)sender;
-            SongItem i = (SongItem)s.DataContext;
-            SongIndex = Songs.IndexOf(i);
+            SongItem si = (SongItem)s.DataContext;
+            int i = Songs.IndexOf(si);
+
+            if (i == SongIndex)
+            {
+                FontIcon ico = new();
+                if (SongPlayer.CurrentState == MediaPlayerState.Playing)
+                {
+                    ico.Glyph = "\uE768";
+                    s.Content = ico;
+                    PauseSong();
+                }
+                else
+                {
+                    ico.Glyph = "\uE769";
+                    s.Content = ico;
+                    PlaySong();
+                }
+                return;
+            }
+
+            SongPlayIndicator(false);
+
+            SongIndex = i;
             SongPlayer.Source = MediaSource.CreateFromUri(new Uri(Songs[SongIndex].Path));
 
+            FontIcon ic = new();
+            ic.Glyph = "\uE769";
+            s.Content = ic;
             PlaySong();
         }
 
         private async void AddFolder_Click(object sender, RoutedEventArgs e)
         {
-            string[] supportedExtensions = { ".mp3", ".flac" };
-
             AppBarButton senderButton = (AppBarButton)sender;
             senderButton.IsEnabled = false;
 
@@ -135,17 +204,17 @@ namespace MusMux
                 List<string> list = new();
                 list.AddRange(
                     files
-                        .Where(f => supportedExtensions.Contains(f.FileType.ToLower()))
+                        .Where(f => SupportedExtensions.Contains(f.FileType.ToLower()))
                         .Select(f => f.Path)
                 );
                 foreach (string s in list)
                 {
+                    if (Songs.Contains(new SongItem(s))) continue;
                     Songs.Add(new SongItem(s));
                 }
                 if (SongIndex == -1) SongIndex = 0;
             }
 
-            //re-enable the button
             senderButton.IsEnabled = true;
         }
 
@@ -162,10 +231,10 @@ namespace MusMux
 
             openPicker.ViewMode = PickerViewMode.List;
             openPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-            openPicker.FileTypeFilter.Add(".mp3");
-            openPicker.FileTypeFilter.Add(".flac");
 
-            // Open the picker for the user to pick a file
+            foreach (string s in SupportedExtensions)
+                openPicker.FileTypeFilter.Add(s);
+
             IReadOnlyList<StorageFile> files = await openPicker.PickMultipleFilesAsync();
             if (files.Count > 0)
             {
@@ -177,6 +246,17 @@ namespace MusMux
             }
 
             senderButton.IsEnabled = true;
+        }
+
+        private void SongSlider_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            Seeking = true;
+        }
+
+        private void SongSlider_PointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            SongPlayer.PlaybackSession.Position = TimeSpan.FromSeconds(SongSlider.Value);
+            Seeking = false;
         }
     }
 }

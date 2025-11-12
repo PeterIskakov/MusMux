@@ -1,21 +1,30 @@
-﻿using System;
-using System.Threading.Tasks;
-using Windows.Storage;
-using Windows.Storage.FileProperties;
-
-namespace MusMux
+﻿namespace MusMux
 {
-    class SongItem
+    public class SongItem
     {
-        public TagLib.Tag Properties { get; private set; }
-        public string Path { get; private set; }
+        public readonly string Title;
+        public readonly string Artist;
+        public readonly string Path;
 
         public SongItem(string path)
         {
             Path = path;
             TagLib.File file = TagLib.File.Create(path);
-            Properties = file.Tag;
+            Title = file.Tag.Title;
+            Artist = file.Tag.FirstPerformer;
             file.Dispose();
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || obj is not SongItem) return false;
+            SongItem s = (SongItem)obj;
+            return s.Path == Path;
+        }
+
+        public override int GetHashCode()
+        {
+            return 17 + Path.GetHashCode();
         }
     }
 }

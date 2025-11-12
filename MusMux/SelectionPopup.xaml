@@ -13,29 +13,21 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid RowSpacing="8" ColumnSpacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-
-        <Button Content="1" Grid.Row="0" Grid.Column="0" Click="Button_Click"/>
-        <Button Content="2" Grid.Row="0" Grid.Column="1" Click="Button_Click"/>
-        <Button Content="3" Grid.Row="0" Grid.Column="2" Click="Button_Click"/>
-
-        <Button Content="4" Grid.Row="1" Grid.Column="0" Click="Button_Click"/>
-        <Button Content="5" Grid.Row="1" Grid.Column="1" Click="Button_Click"/>
-        <Button Content="6" Grid.Row="1" Grid.Column="2" Click="Button_Click"/>
-
-        <Button Content="7" Grid.Row="2" Grid.Column="0" Click="Button_Click"/>
-        <Button Content="8" Grid.Row="2" Grid.Column="1" Click="Button_Click"/>
-        <Button Content="9" Grid.Row="2" Grid.Column="2" Click="Button_Click"/>
-    </Grid>
+    <StackPanel>
+        <TextBlock Text="Choose Next Song" Margin="16,8,0,4" Style="{StaticResource TitleTextBlockStyle}"/>
+        <ListView
+            x:Name="SongListView"
+            IsItemClickEnabled="True"
+            ItemClick="SongListView_ItemClick">
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="local:SongItem">
+                    <StackPanel Margin="0,5,0,5">
+                        <TextBlock Text="{x:Bind Title}" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="{x:Bind Artist}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </StackPanel>
 
 </Window>
