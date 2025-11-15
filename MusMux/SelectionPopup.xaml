@@ -14,7 +14,24 @@
     </Window.SystemBackdrop>
 
     <StackPanel>
-        <TextBlock Text="Choose Next Song" Margin="16,8,0,4" Style="{StaticResource TitleTextBlockStyle}"/>
+        <Grid Margin="16,8,10,4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Choose Next Song"  Style="{StaticResource TitleTextBlockStyle}" Grid.Row="0" Grid.Column="0"/>
+            <Button HorizontalAlignment="Center" Grid.Row="0" Grid.Column="1" Click="Refresh_Click">
+                <FontIcon Glyph="&#xE72C;"/>
+            </Button>
+            <Button HorizontalAlignment="Center" Grid.Row="0" Grid.Column="3" Click="Close_Click">
+                <FontIcon Glyph="&#xE8BB;"/>
+            </Button>
+        </Grid>
         <ListView
             x:Name="SongListView"
             IsItemClickEnabled="True"
@@ -29,5 +46,4 @@
             </ListView.ItemTemplate>
         </ListView>
     </StackPanel>
-
 </Window>

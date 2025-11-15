@@ -8,7 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Title="MusMux">
-    
+
     <Window.SystemBackdrop>
         <MicaBackdrop />
     </Window.SystemBackdrop>
@@ -17,7 +17,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/>
             <RowDefinition Height="1*"/>
-            <RowDefinition Height="96"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -25,10 +25,12 @@
         <CommandBar x:Name="CmdBar" HorizontalAlignment="Left" DefaultLabelPosition="Right" Grid.Row="0" Grid.Column="0">
             <AppBarButton Icon="Add" Label="Add Song" Click="AddFile_Click"/>
             <AppBarButton Icon="Folder" Label="Add Folder" Click="AddFolder_Click"/>
+            <AppBarButton x:Name="RemoveSelected" Icon="Delete" Label="Remove" IsEnabled="False" Click="RemoveSelected_Click"/>
         </CommandBar>
         <ListView
             x:Name="SongListView"
             SelectionMode="Extended"
+            SelectionChanged="SongListView_SelectionChanged"
             Grid.Row="1"
             Grid.Column="0">
             <ListView.ItemTemplate>
@@ -57,11 +59,24 @@
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
             <CommandBar HorizontalAlignment="Center" DefaultLabelPosition="Collapsed" Grid.Row="0" Grid.Column="1">
+                <AppBarToggleButton x:Name="LoopToggle" Icon="RepeatAll" Label="Loop"/>
+                <AppBarSeparator/>
                 <AppBarButton Icon="Previous" Label="Previous" Click="MainPrev_Click"/>
                 <AppBarButton x:Name="MainPlay" Icon="Play" Label="Play" Click="MainPlay_Click"/>
                 <AppBarButton Icon="Next" Label="Next" Click="MainNext_Click"/>
+                <AppBarSeparator/>
+                <AppBarButton x:Name="VolumeButton" AllowFocusOnInteraction="True" Label="Volume">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="&#xE995;"/>
+                    </AppBarButton.Icon>
+                    <AppBarButton.Flyout>
+                        <Flyout>
+                            <Slider TickFrequency="10" TickPlacement="Outside" HorizontalAlignment="Center" Width="200" Maximum="100" Value="100" ValueChanged="VolumeSlider_ValueChanged"/>
+                        </Flyout>
+                    </AppBarButton.Flyout>
+                </AppBarButton>
             </CommandBar>
-            <Slider x:Name="SongSlider" HorizontalAlignment="Center" Width="360" PointerPressed="SongSlider_PointerPressed" PointerReleased="SongSlider_PointerReleased" Grid.Row="1" Grid.Column="1"/>
+            <Slider x:Name="SongSlider" HorizontalAlignment="Center" Width="360" Grid.Row="1" Grid.Column="1"/>
         </Grid>
     </Grid>
 </Window>

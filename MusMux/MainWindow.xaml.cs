@@ -7,17 +7,21 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.Json;
 using System.Timers;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Storage;
 using Windows.Storage.Pickers;
+using Windows.UI.WindowManagement;
 
 namespace MusMux
 {
     public sealed partial class MainWindow : Window
     {
-        private readonly string[] SupportedExtensions = [".mp3", ".flac"];
+        private readonly string[] SupportedExtensions = [".aac", ".flac", ".m4a", ".mp3", ".ogg", ".wav", ".wma"];
+        private const string PauseGlyph = "\uE769";
+        private const string PlayGlyph = "\uE768";
 
         private ObservableCollection<SongItem> Songs;
         private MediaPlayer SongPlayer;
@@ -30,20 +34,41 @@ namespace MusMux
         {
             Seeking = false;
             SongIndex = -1;
+
             InitializeComponent();
+
             Songs = new();
+            SongListView.ItemsSource = Songs;
+            LoadSongList();
+
             SongPlayer = new();
             SongPlayer.MediaEnded += SongPlayer_MediaEnded;
+
             SliderTimer = new(500);
             SliderTimer.Elapsed += SliderTimer_Elapsed;
             SliderTimer.Start();
-            SongListView.ItemsSource = Songs;
-            
+
+            // PointerEvents must be assinged this way or else they won't fire on the SongSlider for some reason...
+            SongSlider.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(SongSlider_PointerPressed), true);
+            SongSlider.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(SongSlider_PointerReleased), true);
+            SongSlider.ThumbToolTipValueConverter = new SliderTimeConverter();
+
+            OverlappedPresenter presenter = OverlappedPresenter.Create();
+            presenter.PreferredMinimumWidth = 500;
+            presenter.PreferredMinimumHeight = 400;
+
+            AppWindow.SetPresenter(presenter);
+            AppWindow.Resize(new(800, 600));
             ExtendsContentIntoTitleBar = true;
             AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
         }
 
         // Helper functions
+
+        private MediaSource CurrentSongSource()
+        {
+            return MediaSource.CreateFromUri(new Uri(Songs[SongIndex].Path));
+        }
 
         private void PauseSong()
         {
@@ -62,18 +87,53 @@ namespace MusMux
         private void SongPlayIndicator(bool playing)
         {
             ListViewItem container = (ListViewItem)SongListView.ContainerFromIndex(SongIndex);
-            if (container != null)
-            {
-                FrameworkElement fe = (FrameworkElement)container.ContentTemplateRoot;
-                Button btn = (Button)fe.FindName("SongPlay");
-                FontIcon ico = new();
+            FrameworkElement fe = (FrameworkElement)container.ContentTemplateRoot;
+            Button btn = (Button)fe.FindName("SongPlay");
+            FontIcon ico = new();
 
-                ico.Glyph = "\uE768";
-                if (playing)
+            ico.Glyph = PlayGlyph;
+            if (playing)
+            {
+                ico.Glyph = PauseGlyph;
+            }
+            btn.Content = ico;
+        }
+
+        private async void SaveSongList()
+        {
+            StorageFile file = await ApplicationData.Current.LocalFolder.CreateFileAsync("SongList.json", CreationCollisionOption.ReplaceExisting);
+
+            List<string> paths = Songs.Select(i => i.Path).ToList();
+
+            string json = JsonSerializer.Serialize(paths);
+            await FileIO.WriteTextAsync(file, json);
+        }
+
+        private async void LoadSongList()
+        {
+            try
+            {
+                StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync("SongList.json");
+
+                string json = await FileIO.ReadTextAsync(file);
+                List<string>? songlist = JsonSerializer.Deserialize<List<string>>(json);
+
+                if (songlist == null) throw new Exception();
+
+                foreach (string s in songlist)
                 {
-                    ico.Glyph = "\uE769";
-                } 
-                btn.Content = ico;
+                    Songs.Add(new(s));
+                }
+
+                if (Songs.Count > 0) 
+                { 
+                    SongIndex = 0;
+                    SongPlayer.Source = CurrentSongSource();
+                }
+            }
+            catch (Exception)
+            {
+                // First launch
             }
         }
 
@@ -103,9 +163,14 @@ namespace MusMux
             {
                 PauseSong();
                 SongPlayIndicator(false);
-                int selection = await new SelectionPopup(Songs.ToList()).SelectSong();
-                SongIndex = selection;
-                SongPlayer.Source = MediaSource.CreateFromUri(new Uri(Songs[SongIndex].Path));
+
+                if (LoopToggle.IsChecked == false)
+                {
+                    int selection = await new SelectionPopup(Songs.ToList()).SelectSong();
+                    if (selection == -1) return;
+                    SongIndex = selection;
+                    SongPlayer.Source = CurrentSongSource();
+                }
 
                 SongPlayIndicator(true);
                 PlaySong();
@@ -130,7 +195,7 @@ namespace MusMux
             if (SongIndex == -1) return;
             SongPlayIndicator(false);
             if (SongIndex - 1 >= 0) SongIndex--;
-            SongPlayer.Source = MediaSource.CreateFromUri(new Uri(Songs[SongIndex].Path));
+            SongPlayer.Source = CurrentSongSource();
 
             SongPlayIndicator(true);
             PlaySong();
@@ -141,7 +206,7 @@ namespace MusMux
             if (SongIndex == -1) return;
             SongPlayIndicator(false);
             if (SongIndex + 1 < Songs.Count) SongIndex++;
-            SongPlayer.Source = MediaSource.CreateFromUri(new Uri(Songs[SongIndex].Path));
+            SongPlayer.Source = CurrentSongSource();
 
             SongPlayIndicator(true);
             PlaySong();
@@ -158,13 +223,13 @@ namespace MusMux
                 FontIcon ico = new();
                 if (SongPlayer.CurrentState == MediaPlayerState.Playing)
                 {
-                    ico.Glyph = "\uE768";
+                    ico.Glyph = PlayGlyph;
                     s.Content = ico;
                     PauseSong();
                 }
                 else
                 {
-                    ico.Glyph = "\uE769";
+                    ico.Glyph = PauseGlyph;
                     s.Content = ico;
                     PlaySong();
                 }
@@ -174,10 +239,12 @@ namespace MusMux
             SongPlayIndicator(false);
 
             SongIndex = i;
-            SongPlayer.Source = MediaSource.CreateFromUri(new Uri(Songs[SongIndex].Path));
+            SongPlayer.Source = CurrentSongSource();
 
-            FontIcon ic = new();
-            ic.Glyph = "\uE769";
+            FontIcon ic = new()
+            {
+                Glyph = PauseGlyph
+            };
             s.Content = ic;
             PlaySong();
         }
@@ -209,10 +276,17 @@ namespace MusMux
                 );
                 foreach (string s in list)
                 {
-                    if (Songs.Contains(new SongItem(s))) continue;
-                    Songs.Add(new SongItem(s));
+                    SongItem song = new(s);
+                    if (Songs.Contains(song)) continue;
+                    Songs.Add(song);
                 }
-                if (SongIndex == -1) SongIndex = 0;
+                if (SongIndex == -1)
+                {
+                    SongIndex = 0;
+                    SongPlayer.Source = CurrentSongSource();
+                }
+
+                SaveSongList();
             }
 
             senderButton.IsEnabled = true;
@@ -240,9 +314,17 @@ namespace MusMux
             {
                 foreach (StorageFile file in files)
                 {
-                    Songs.Add(new SongItem(file.Path));
+                    SongItem song = new(file.Path);
+                    if (Songs.Contains(song)) continue;
+                    Songs.Add(song);
                 }
-                if (SongIndex == -1) SongIndex = 0;
+                if (SongIndex == -1)
+                {
+                    SongIndex = 0;
+                    SongPlayer.Source = CurrentSongSource();
+                }
+
+                SaveSongList();
             }
 
             senderButton.IsEnabled = true;
@@ -257,6 +339,55 @@ namespace MusMux
         {
             SongPlayer.PlaybackSession.Position = TimeSpan.FromSeconds(SongSlider.Value);
             Seeking = false;
+        }
+
+        private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            if (SongPlayer == null) return;
+            SongPlayer.Volume = ((double) e.NewValue) / 100d;
+
+            FontIcon ico = new()
+            {
+                Glyph = "\uE767"
+            };
+
+            if (e.NewValue == 0) ico.Glyph = "\uE74F";
+            else if (e.NewValue > 0 && e.NewValue <= 33) ico.Glyph = "\uE993";
+            else if (e.NewValue > 33 && e.NewValue <= 66) ico.Glyph = "\uE994";
+
+            VolumeButton.Icon = ico;
+        }
+
+        private void RemoveSelected_Click(object sender, RoutedEventArgs e)
+        {
+            List<SongItem> sel = SongListView.SelectedItems.Cast<SongItem>().ToList();
+
+            foreach (SongItem item in sel)
+            {
+                if (Songs.IndexOf(item) == SongIndex)
+                {
+                    PauseSong();
+                    SongIndex--;
+                    if (SongIndex != -1)
+                        SongPlayer.Source = CurrentSongSource();
+                }
+                Songs.Remove(item);
+            }
+
+            if (SongIndex >= Songs.Count) 
+            {
+                PauseSong();
+                SongIndex = Songs.Count - 1;
+                if (SongIndex != -1)
+                    SongPlayer.Source = CurrentSongSource();
+            }
+
+            SaveSongList();
+        }
+
+        private void SongListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            RemoveSelected.IsEnabled = SongListView.SelectedItems.Any();
         }
     }
 }

@@ -27,7 +27,7 @@ namespace MusMux
             Random rnd = new();
 
             OriginalSongList = songs;
-            SongList = new(songs.OrderBy(x => rnd.Next()).Take(6));
+            SongList = new(OriginalSongList.OrderBy(x => rnd.Next()).Take(6));
             SongListView.ItemsSource = SongList;
 
             AppWindow.Resize(new SizeInt32(WindowWidth, WindowHeight));
@@ -54,7 +54,10 @@ namespace MusMux
             AppWindow.SetPresenter(presenter);
         }
 
-        // Call this to show the popup and await the result.
+        /// <summary>
+        /// Opens a selection window where the user clicks the next song they want.
+        /// </summary>
+        /// <returns>Index of chosen song or -1 if none is chosen.</returns>
         public async Task<int> SelectSong()
         {
             AppWindow.Show();
@@ -68,6 +71,22 @@ namespace MusMux
 
             _tcs.TrySetResult(i);
             Close();
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            _tcs.TrySetResult(-1);
+            Close();
+        }
+
+        private void Refresh_Click(object sender, RoutedEventArgs e)
+        {
+            Random rnd = new();
+            SongList.Clear();
+            foreach (SongItem s in OriginalSongList.OrderBy(x => rnd.Next()).Take(6))
+            {
+                SongList.Add(s);
+            }
         }
     }
 }

@@ -11,6 +11,7 @@
             Path = path;
             TagLib.File file = TagLib.File.Create(path);
             Title = file.Tag.Title;
+            Title ??= System.IO.Path.GetFileName(path);
             Artist = file.Tag.FirstPerformer;
             file.Dispose();
         }
