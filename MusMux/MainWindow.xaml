@@ -13,16 +13,16 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid x:Name="LayoutRoot">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="48"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <CommandBar x:Name="CmdBar" HorizontalAlignment="Left" DefaultLabelPosition="Right" Grid.Row="0" Grid.Column="0">
+        <CommandBar HorizontalAlignment="Left" DefaultLabelPosition="Right" Grid.Row="0" Grid.Column="0">
             <AppBarButton Icon="Add" Label="Add Song" Click="AddFile_Click"/>
             <AppBarButton Icon="Folder" Label="Add Folder" Click="AddFolder_Click"/>
             <AppBarButton x:Name="RemoveSelected" Icon="Delete" Label="Remove" IsEnabled="False" Click="RemoveSelected_Click"/>
@@ -30,6 +30,7 @@
         <ListView
             x:Name="SongListView"
             SelectionMode="Extended"
+            ItemsSource="{x:Bind Songs}"
             SelectionChanged="SongListView_SelectionChanged"
             Grid.Row="1"
             Grid.Column="0">

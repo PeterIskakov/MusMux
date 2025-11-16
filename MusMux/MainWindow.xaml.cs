@@ -19,7 +19,16 @@ namespace MusMux
 {
     public sealed partial class MainWindow : Window
     {
-        private readonly string[] SupportedExtensions = [".aac", ".flac", ".m4a", ".mp3", ".ogg", ".wav", ".wma"];
+        private readonly string[] SupportedExtensions = // Only types that I tested, other file types may work too.
+            [ 
+            ".aac", 
+            ".flac", 
+            ".m4a", 
+            ".mp3", 
+            ".ogg", 
+            ".wav", 
+            ".wma"
+            ]; 
         private const string PauseGlyph = "\uE769";
         private const string PlayGlyph = "\uE768";
 
@@ -35,10 +44,10 @@ namespace MusMux
             Seeking = false;
             SongIndex = -1;
 
+            Songs = new();
+
             InitializeComponent();
 
-            Songs = new();
-            SongListView.ItemsSource = Songs;
             LoadSongList();
 
             SongPlayer = new();
@@ -89,9 +98,10 @@ namespace MusMux
             ListViewItem container = (ListViewItem)SongListView.ContainerFromIndex(SongIndex);
             FrameworkElement fe = (FrameworkElement)container.ContentTemplateRoot;
             Button btn = (Button)fe.FindName("SongPlay");
-            FontIcon ico = new();
-
-            ico.Glyph = PlayGlyph;
+            FontIcon ico = new()
+            {
+                Glyph = PlayGlyph
+            };
             if (playing)
             {
                 ico.Glyph = PauseGlyph;
@@ -268,12 +278,7 @@ namespace MusMux
             if (folder != null)
             {
                 IReadOnlyList<StorageFile> files = await folder.GetFilesAsync();
-                List<string> list = new();
-                list.AddRange(
-                    files
-                        .Where(f => SupportedExtensions.Contains(f.FileType.ToLower()))
-                        .Select(f => f.Path)
-                );
+                List<string> list = new(files.Where(f => SupportedExtensions.Contains(f.FileType.ToLower())).Select(f => f.Path));
                 foreach (string s in list)
                 {
                     SongItem song = new(s);
@@ -304,7 +309,7 @@ namespace MusMux
             WinRT.Interop.InitializeWithWindow.Initialize(openPicker, hWnd);
 
             openPicker.ViewMode = PickerViewMode.List;
-            openPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            openPicker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
 
             foreach (string s in SupportedExtensions)
                 openPicker.FileTypeFilter.Add(s);
