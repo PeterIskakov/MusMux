@@ -38,9 +38,11 @@ namespace MusMux
 
         private int SongIndex;
         private bool Seeking;
+        private bool MissingFiles;
 
         public MainWindow()
         {
+            MissingFiles = false;
             Seeking = false;
             SongIndex = -1;
 
@@ -132,7 +134,16 @@ namespace MusMux
 
                 foreach (string s in songlist)
                 {
-                    Songs.Add(new(s));
+                    try
+                    {
+                        SongItem si = new(s);
+
+                        Songs.Add(si);
+                    }
+                    catch (Exception)
+                    {
+                        MissingFiles = true;
+                    }
                 }
 
                 if (Songs.Count > 0) 
@@ -393,6 +404,23 @@ namespace MusMux
         private void SongListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             RemoveSelected.IsEnabled = SongListView.SelectedItems.Any();
+        }
+
+        private async void Grid_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (!MissingFiles) return;
+
+            ContentDialog dialog = new()
+            {
+                Title = "Some songs were not loaded",
+                Content = "Certain songs were not found at their known paths.",
+                CloseButtonText = "Ok",
+                XamlRoot = Content.XamlRoot
+            };
+
+            await dialog.ShowAsync();
+
+            SaveSongList();
         }
     }
 }
