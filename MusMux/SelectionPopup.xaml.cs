@@ -43,7 +43,7 @@ namespace MusMux
                 AppWindow.Move(new PointInt32(0, 0));
             }
 
-                OverlappedPresenter presenter = OverlappedPresenter.Create();
+            OverlappedPresenter presenter = OverlappedPresenter.Create();
 
             presenter.IsAlwaysOnTop = true;
             presenter.IsMaximizable = false;
@@ -51,6 +51,7 @@ namespace MusMux
             presenter.IsResizable = false;
             presenter.SetBorderAndTitleBar(true, false);
 
+            AppWindow.IsShownInSwitchers = false;
             AppWindow.SetPresenter(presenter);
         }
 
